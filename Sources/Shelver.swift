@@ -73,7 +73,7 @@ extension Shelver {
 		)
 		
 		@Argument(help: "The path to the books.json file", completion: .file(extensions: ["json"]))
-		var booksJsonPath: String
+		var booksJsonPath: String?
 		
 		@Flag(help: "Print the structure to the console")
 		var printStructure: Bool = false
@@ -82,7 +82,7 @@ extension Shelver {
 		var verbose: Bool = false
 		
 		@Argument(help: "The path to the AudioBookshelf directory", completion: .directory)
-		var outputPath: String
+		var outputPath: String?
 		
 		@Flag(help: "Dry run the command")
 		var dryRun: Bool = false
@@ -111,6 +111,17 @@ extension Shelver {
 		private var stats = Statistics()
 		
 		func run() throws {
+            // Load config
+			let config = Config.load()
+			
+			guard let booksJsonPath = booksJsonPath ?? config?.openAudiblePath else {
+				throw ValidationError("No books.json path provided and none found in config")
+			}
+			
+			guard let outputPath = outputPath ?? config?.audioBookshelfPath else {
+				throw ValidationError("No AudioBookshelf path provided and none found in config")
+			}
+
 			let data = try Data(contentsOf: URL(fileURLWithPath: booksJsonPath))
 			let books = try JSONDecoder().decode([Audiobook].self, from: data)
 			
@@ -220,6 +231,27 @@ extension Shelver {
 			let authors = organize(books: books)
 			
 			printx(structured: authors)
+		}
+	}
+}
+
+extension Shelver {
+	struct Config: Codable {
+		let openAudiblePath: String?
+		let audioBookshelfPath: String?
+		
+		static var configPath: URL {
+			FileManager.default.homeDirectoryForCurrentUser
+				.appendingPathComponent(".config")
+				.appendingPathComponent("shelver")
+				.appendingPathComponent("config.json")
+		}
+		
+		static func load() -> Config? {
+			guard let data = try? Data(contentsOf: configPath) else {
+				return nil
+			}
+			return try? JSONDecoder().decode(Config.self, from: data)
 		}
 	}
 }
