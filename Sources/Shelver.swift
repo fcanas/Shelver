@@ -69,7 +69,23 @@ extension Shelver {
 	struct BuildStructure: ParsableCommand {
 		nonisolated(unsafe) static var configuration = CommandConfiguration(
 			commandName: "build-structure",
-			abstract: "Apply an OpenAudible library to an AudioBookshelf library."
+			abstract: "Apply an OpenAudible library to an AudioBookshelf library.",
+			discussion:
+				"""
+				Copies the contents of an OpenAudible library to destination. Creates a
+				/Author/Series/Title/ directory structure expected by AudioBookshelf.
+				
+				Paths to the source books.json file and destination root directory may
+				be specified at:
+				~/.config/shelver/config.json
+				
+				    {
+				    "openAudiblePath":"/path/to/OpenAudible/books.json",
+				    "audioBookshelfPath":"/destination/path/AudioBooks/"
+				    }
+				
+				If a config file is found, the path arguments are ignored. 
+				"""
 		)
 		
 		@Argument(help: "The path to the books.json file", completion: .file(extensions: ["json"]))
@@ -84,7 +100,7 @@ extension Shelver {
 		@Argument(help: "The path to the AudioBookshelf directory", completion: .directory)
 		var outputPath: String?
 		
-		@Flag(help: "Dry run the command")
+		@Flag(help: "Do not copy files or create directories.")
 		var dryRun: Bool = false
 		
 		enum LogLevel {
@@ -223,7 +239,8 @@ extension Shelver {
 	struct Summarize: ParsableCommand {
 		nonisolated(unsafe) static var configuration = CommandConfiguration(
 			commandName: "summarize",
-			abstract: "Summarize the contents of a books.json file"
+			abstract: "Summarize the contents of a books.json file",
+			shouldDisplay: false
 		)
 		
 		@Argument(help: "The path to the books.json file", completion: .file(extensions: ["json"]))
