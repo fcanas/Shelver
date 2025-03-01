@@ -87,8 +87,14 @@ extension Shelver {
 		@Flag(help: "Dry run the command")
 		var dryRun: Bool = false
 		
-		private func log(_ message: String) {
-			if verbose {
+		enum LogLevel {
+			case change  // Directory created, file copied - always printed
+			case noop    // Skip operations - only printed in verbose mode
+		}
+		
+		private func log(_ message: String, level: LogLevel = .noop) {
+			// Print change logs always, noop logs only in verbose mode
+			if level == .change || verbose {
 				print(message)
 			}
 		}
@@ -198,14 +204,14 @@ extension Shelver {
 		}
 		
 		private func copyFile(from url: URL, to targetUrl: URL) throws {
-			log("Copying file \(url.path) to \(targetUrl.path)")
+			log("Copying file: \(url.path) → \(targetUrl.path)", level: .change)
 			if !dryRun {
 				try FileManager.default.copyItem(at: url, to: targetUrl)
 			}
 		}
 		
 		private func createDirectory(at url: URL, dryRun: Bool) throws {
-			log("Creating directory \(url.path)")
+			log("Creating directory: \(url.path)", level: .change)
 			if !dryRun {
 				try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
 			}
